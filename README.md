@@ -39,3 +39,23 @@ Happy DevOpsing ♾️
 - [x] Create Kanban board
 - [x] Save openSenseMap ids
 - [x] Write implementation doc
+
+### Phase 2
+
+- [x] Create version.sh that outputs version
+- [x] Choose semantic version 0.1.0 as reccomended at [Semantic Versioning 2.0.0 | Semantic Versioning](https://semver.org/)
+- [x] Create a Dockerfile
+- [x] Test locally
+- [x] Write how-to-test in documentation
+
+#### How to test
+
+```bash
+git clone https://github.com/Aldeimeter/devops-hands-on-project-hivebox.git
+
+cd devops-hands-on-project-hivebox
+
+docker build -t hivebox:0.1.0 .
+
+docker run hivebox:0.1.0
+```
