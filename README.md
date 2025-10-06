@@ -59,3 +59,27 @@ docker build -t hivebox:0.1.0 .
 
 docker run hivebox:0.1.0
 ```
+
+### Phase 3
+
+#### Preparation
+
+##### Why choose Ruff over Pylint?
+
+Actually because it is faster
+However pylint is more comperhensive, that's why I am going to use it
+in CI pipeline on CI/CD server and manually from time to time while writing code.
+
+##### Why choose uv over pip?
+
+I use arch btw. Which I regret as much as I regret using neovim instead of VSCode
+uv simply easier to install deps and to run app in venv
+
+##### Steps
+
+- [x] Install [Hadolint CLI](https://github.com/hadolint/hadolint)
+- [x] Configure Hadolint in neovim
+- [x] Install ~~Pylint~~ [Ruff](https://docs.astral.sh/ruff/)
+- [x] Configure Ruff in neovim
+- [x] Install uv
+- [x] Init uv project
