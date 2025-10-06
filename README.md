@@ -62,18 +62,27 @@ docker run hivebox:0.1.0
 
 ### Phase 3
 
-#### Preparation
+#### Preparation p.1
 
 ##### Why choose Ruff over Pylint?
 
-Actually because it is faster
-However pylint is more comperhensive, that's why I am going to use it
-in CI pipeline on CI/CD server and manually from time to time while writing code.
+**Primary reason:** Ruff is significantly faster than Pylint.
+
+However, Pylint is more comprehensive in its analysis. My approach:
+
+- **Ruff:** For quick, real-time feedback during development
+- **Pylint:** For thorough analysis in CI/CD pipelines and periodic manual checks
 
 ##### Why choose uv over pip?
 
-I use arch btw. Which I regret as much as I regret using neovim instead of VSCode
-uv simply easier to install deps and to run app in venv
+**Context:** Running Arch Linux (btw) with Neovim as my editor.
+
+**Practical benefits of uv:**
+
+- Simpler dependency installation and virtual environment management on Arch
+- Faster dependency resolution compared to pip
+- Better developer experience for running apps in virtual environments
+- Native support for dependency groups (production vs dev dependencies)
 
 ##### Steps
 
@@ -83,3 +92,112 @@ uv simply easier to install deps and to run app in venv
 - [x] Configure Ruff in neovim
 - [x] Install uv
 - [x] Init uv project
+
+#### Preparation p.2
+
+##### FastApi vs Flask
+
+I'd prefer to go with [FastApi](https://fastapi.tiangolo.com/) as I've used it in the past.
+
+##### API Architecture
+
+**Objective:** Fetch N openSenseMap boxes and calculate average temperature from sensors with data no older than 1 hour.
+
+**Configuration:**
+
+- Store senseBox IDs in `sensebox_ids.txt` (one ID per line)
+- Decouple box IDs from source code for easy updates
+
+**API Endpoint:** `GET https://api.opensensemap.org/boxes/:senseBoxId`
+
+Returns full box metadata including latest measurements for all sensors.
+
+**Implementation Flow:**
+
+```
+For each box ID in configuration:
+1. Fetch box data from OpenSenseMap API
+2. Find temperature sensor(s):
+- Match by phenomenon: "Temperatur"
+- OR match by unit: "°C"
+3. Validate data freshness:
+- Parse lastMeasurement.createdAt timestamp
+- Check if timestamp is within last 1 hour
+4. If valid:
+- Extract temperature value
+- Add to calculation pool
+5. If invalid:
+- Skip this box (log reason)
+
+Calculate average temperature from all valid readings
+```
+
+**Data Validation Rules:**
+
+Include reading if:
+
+- Box has temperature sensor
+- `lastMeasurement.createdAt` is within last 60 minutes
+- Temperature value is not null/missing
+
+Exclude reading if:
+
+- No temperature sensor on box
+- Data older than 1 hour
+- Temperature value is null/empty
+- API request fails
+
+**Response Structure:**
+
+```json
+{
+  "average_temperature": 23.5,
+  "unit": "°C",
+  "timestamp": "2025-10-07T14:30:00Z",
+  "statistics": {
+    "boxes_checked": 3,
+    "valid_readings": 2,
+    "excluded_boxes": 1
+  },
+  "excluded_reasons": [
+    {
+      "box_id": "abc123",
+      "reason": "data_too_old",
+      "last_measurement": "2025-10-07T12:00:00Z"
+    }
+  ]
+}
+```
+
+**Error Handling:**
+
+- **No valid readings:** Return HTTP 503 or 200 with null average + explanation
+- **API failures:** Skip box if request fails
+- **Rate limiting:** Implement delays between requests if needed
+- **Invalid box IDs:** Log warning, continue with remaining boxes
+
+**Temperature Sensor Identification:**
+
+OpenSenseMap boxes may have multiple sensors. Identify temperature by:
+
+1. `sensor.phenomenon === "Temperatur"` (German)
+2. `sensor.unit === "°C"`
+3. Fallback to `sensor.title` containing "temp" (case-insensitive)
+
+##### Testing
+
+I want to follow **Test-Driven Development** (TDD) principles for this project.
+
+**Testing Framework Setup:**
+
+- FastAPI provides excellent testing support via `pytest` and `httpx` using `TestClient`
+- Test dependencies are added to the `[dependency-groups]` dev group in `pyproject.toml`
+- Using `uv` dev dependencies keeps the final Docker image smaller (dev deps excluded from production)
+- Created initial test to verify pytest integration works correctly
+
+##### Steps
+
+- [x] Init FastApi project
+- [x] Look into [openSenseMap API](https://docs.opensensemap.org/)
+- [x] Add testing framework
+- [x] Test testing framework
