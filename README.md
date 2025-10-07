@@ -201,3 +201,83 @@ I want to follow **Test-Driven Development** (TDD) principles for this project.
 - [x] Look into [openSenseMap API](https://docs.opensensemap.org/)
 - [x] Add testing framework
 - [x] Test testing framework
+
+#### Code implementation
+
+##### /version Endpoint Architecture
+
+**Objective:** Return the application version from environment configuration
+
+**Project Structure:**
+
+```
+hivebox-python/
+├── app/
+│   ├── __init__.py
+│   ├── config.py            # Configuration management (reads .env)
+│   ├── routers/             # API route modules
+│   │   ├── __init__.py
+│   │   └── version.py       # /version endpoint
+├── tests/                   # Test modules
+│   ├── __init__.py
+│   └── test_version.py      # Tests for /version endpoint
+├── .env                     # Environment variables (not in git)
+├── .env.example             # Example env file (in git)
+├── pyproject.toml           # Project metadata and dependencies
+└── main.py                  # Application factory and FastAPI instance
+```
+
+**Architectural Principles:**
+
+1. **Separation of Concerns:**
+   - `app/config.py` - Configuration management (environment variables)
+   - `app/routers/version.py` - Route handlers (API layer)
+   - `tests/test_version.py` - Test suite
+
+2. **Modular Design:**
+   - Use FastAPI's `APIRouter` for route organization
+   - Each router handles a specific domain (version, sensors, health, etc.)
+   - Routers are included in main app via `app.include_router()`
+
+3. **Configuration as Code:**
+   - Version stored in `.env` file (12-factor app principle)
+   - Easy to update without code changes
+   - Works well with Docker/Kubernetes deployments
+
+**Configuration Management:**
+
+Use `pydantic-settings` (included with FastAPI) to read environment variables:
+
+```python
+from pydantic_settings import BaseSettings, SettingsConfigDict
+
+
+class Settings(BaseSettings):
+    model_config = SettingsConfigDict(env_file=".env")
+
+    app_version: str = "0.0.0"  # default value
+
+
+settings = Settings()
+```
+
+**.env file:**
+
+```
+APP_VERSION=0.2.0
+```
+
+**Test Cases for /version endpoint:**
+
+1. **Happy Path:**
+   - GET /version returns 200 status code
+   - Version is the same as in .env
+   - Response structure is `{"version": "X.Y.Z"}`
+
+**API Response Example:**
+
+```json
+{
+  "version": "0.2.0"
+}
+```
