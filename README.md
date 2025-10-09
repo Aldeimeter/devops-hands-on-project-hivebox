@@ -417,3 +417,39 @@ Test cases organized by category:
 10. Timestamp validation tests
 
 All tests implemented before endpoint code
+
+#### Docker Updates
+
+- [x] Refactor Dockerfile to multi-stage build
+- [x] Add .dockerignore for optimized builds
+- [x] Implement Docker best practices (non-root user, labels, security)
+- [x] Create separate test and production stages
+
+**Multi-stage Dockerfile Architecture:**
+
+- **Base stage:** Shared dependencies and configuration
+- **Test stage:** Includes dev dependencies and test suite
+- **Production stage:** Minimal, security-hardened image with non-root user
+
+**Build and test:**
+
+Run tests in Docker:
+
+```bash
+docker build --target test -t hivebox:test .
+docker run --rm hivebox:test
+```
+
+Build production image:
+
+```bash
+docker build --target production -t hivebox:0.2.0 .
+docker run -p 8000:80 hivebox:0.2.0
+```
+
+Quick production build (default):
+
+```bash
+docker build -t hivebox:latest .
+docker run -p 8000:80 hivebox:latest
+```
