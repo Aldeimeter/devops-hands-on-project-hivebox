@@ -178,11 +178,9 @@ Exclude reading if:
 
 **Temperature Sensor Identification:**
 
-OpenSenseMap boxes may have multiple sensors. Identify temperature by:
+OpenSenseMap boxes may have multiple sensors. Identify air temperature by:
 
 1. `sensor.phenomenon === "Temperatur"` (German)
-2. `sensor.unit === "°C"`
-3. Fallback to `sensor.title` containing "temp" (case-insensitive)
 
 ##### Testing
 
@@ -281,3 +279,141 @@ APP_VERSION=0.2.0
   "version": "0.2.0"
 }
 ```
+
+##### /temperature Endpoint Architecture
+
+**Objective:** Return current average temperature based on all senseBox data no older than 1 hour
+
+**Project Structure Updates:**
+
+```
+hivebox-python/
+├── app/
+│   ├── __init__.py
+│   ├── config.py                # Configuration management (reads .env)
+│   ├── routers/                 # API route modules
+│   │   ├── __init__.py
+│   │   ├── version.py           # /version endpoint
+│   │   └── temperature.py       # /temperature endpoint
+│   ├── services/                # Business logic layer
+│   │   ├── __init__.py
+│   │   └── opensensemap.py      # OpenSenseMap API client
+│   ├── models/                  # Pydantic models
+│   │   ├── __init__.py
+│   │   └── temperature.py       # Temperature response models
+├── tests/                       # Test modules
+│   ├── __init__.py
+│   ├── test_version.py          # Tests for /version endpoint
+│   └── test_temperature.py      # Tests for /temperature endpoint
+├── sensebox_ids.txt             # SenseBox IDs (one per line)
+├── .env                         # Environment variables (not in git)
+├── .env.example                 # Example env file (in git)
+├── pyproject.toml               # Project metadata and dependencies
+└── main.py                      # Application factory and FastAPI instance
+```
+
+**Architectural Layers:**
+
+1. **Router Layer (`app/routers/temperature.py`):**
+   - Handles HTTP request/response
+   - Delegates business logic to service layer
+   - Returns formatted API response
+
+2. **Service Layer (`app/services/opensensemap.py`):**
+   - Fetches data from OpenSenseMap API
+   - Identifies temperature sensors
+   - Validates data freshness (within 1 hour)
+   - Calculates average temperature
+   - Handles API failures gracefully
+
+3. **Model Layer (`app/models/temperature.py`):**
+   - Pydantic models for response validation
+   - Type safety for temperature data structures
+
+**Data Flow:**
+
+```
+Application Startup:
+- Read sensebox_ids.txt once
+- Store IDs in memory (config.py Settings)
+
+Request Flow:
+1. Client → GET /temperature
+2. Router → Service Layer
+3. Service gets box IDs from in-memory config
+4. For each box ID:
+   - Fetch box data from OpenSenseMap API
+   - Identify temperature sensor(s)
+   - Validate data freshness (<1 hour)
+   - Extract valid temperature values
+5. Calculate average from valid readings
+6. Build response with statistics
+7. Router → Client (JSON response)
+```
+
+**Temperature Sensor Identification Strategy:**
+
+Simple exact match:
+
+- `sensor.title === "Temperatur"` (air temperature only, excludes soil/ground temperature)
+
+**Data Validation Rules:**
+
+Include reading if:
+
+- Box has temperature sensor
+- `lastMeasurement.createdAt` is within last 60 minutes
+- Temperature value is not null/missing
+
+Exclude reading if:
+
+- No temperature sensor on box
+- Data older than 1 hour
+- Temperature value is null/empty
+- API request fails
+
+**API Response Structure:**
+
+```json
+{
+  "average_temperature": 23.5,
+  "unit": "°C",
+  "timestamp": "2025-10-09T14:30:00Z",
+  "statistics": {
+    "boxes_checked": 3,
+    "valid_readings": 2,
+    "excluded_boxes": 1
+  },
+  "excluded_reasons": [
+    {
+      "box_id": "5eba5fbad46fb8001b799786",
+      "reason": "data_too_old",
+      "last_measurement": "2025-10-09T12:00:00Z"
+    }
+  ]
+}
+```
+
+**Error Handling:**
+
+- **No valid readings:** If all senseBoxes have stale data (>1 hour old) or no temperature sensors, return HTTP 200 with `average_temperature: null` and explain why in the response (e.g., "No valid temperature data available within the last hour")
+- **API failures:** If fetching data from OpenSenseMap fails for one box (network error, timeout, 500 error), skip that box but continue processing the remaining boxes. Don't fail the entire request.
+- **Invalid box IDs:** If a senseBox ID doesn't exist (404), log a warning and exclude it from the calculation. Continue with valid boxes.
+- **Empty configuration:** If `sensebox_ids.txt` is empty or missing, return HTTP 503 (Service Unavailable) since the service can't function without configured boxes.
+
+**Test-Driven Development Approach:**
+
+Test cases organized by category:
+
+1. Happy path tests
+2. Data freshness validation tests
+3. Sensor identification tests
+4. Data validation tests
+5. Multiple boxes scenarios
+6. Edge cases (no valid readings, single reading)
+7. API failure handling tests
+8. Calculation precision tests
+9. Statistics accuracy tests
+10. Timestamp validation tests
+
+All tests implemented before endpoint code
