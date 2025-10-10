@@ -37,7 +37,9 @@ class OpenSenseMapService:
                 )
 
         # Calculate average
-        avg_temp = sum(valid_temps) / len(valid_temps) if valid_temps else None
+        avg_temp = (
+            round(sum(valid_temps) / len(valid_temps), 2) if valid_temps else None
+        )
 
         return TemperatureResponse(
             average_temperature=avg_temp,
