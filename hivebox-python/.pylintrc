@@ -1,0 +1,17 @@
+[MAIN]
+# Use multiple processes to speed up Pylint
+jobs=0
+
+[MESSAGES CONTROL]
+# Disable specific warnings that are not applicable or too strict for this project
+disable=
+    too-few-public-methods,  # Pydantic models and config classes are fine with few methods
+    import-error,  # Virtual environment imports are resolved at runtime
+
+[FORMAT]
+# Maximum number of characters on a single line
+max-line-length=100
+
+[DESIGN]
+# Minimum number of public methods for a class
+min-public-methods=0
