@@ -453,3 +453,62 @@ Quick production build (default):
 docker build -t hivebox:latest .
 docker run -p 8000:80 hivebox:latest
 ```
+
+#### CI/CD Pipeline
+
+**GitHub Actions Workflow:**
+
+Implemented comprehensive CI/CD pipeline in `.github/workflows/ci.yml` with the following stages:
+
+**1. Lint Job:**
+
+- Python code linting with `pylint`
+- Dockerfile linting with `hadolint`
+- Runs on Python 3.13 with `uv` for dependency management
+- Uses GitHub Actions cache for faster dependency installation
+
+**2. Build & Test Job:**
+
+- Builds Docker test image with all dev dependencies
+- Runs unit tests inside Docker container
+- Builds production Docker image
+- Starts production container and runs integration tests
+- Tests `/version` endpoint to verify correct version (0.2.0)
+- Uses Docker layer caching (GitHub Actions cache) for faster builds
+- Cleans up containers after tests
+
+**Workflow Triggers:**
+
+- Push to `main` branch
+- Pull requests to `main` branch
+
+**Pipeline Benefits:**
+
+- Early detection of code quality issues
+- Dockerfile best practices enforcement
+- Automated testing in isolated Docker environment
+- Integration testing with actual container
+- Fast builds with multi-layer caching
+
+**Local Testing:**
+
+Run the same checks locally before pushing:
+
+```bash
+# Lint Python code
+cd hivebox-python
+uv run pylint app/ main.py
+
+# Lint Dockerfile
+hadolint Dockerfile
+
+# Run tests in Docker
+docker build --target test -t hivebox:test .
+docker run --rm hivebox:test
+
+# Test production container
+docker build --target production -t hivebox:prod .
+docker run -d --name hivebox-test -p 8000:80 hivebox:prod
+curl http://localhost:8000/version
+docker stop hivebox-test && docker rm hivebox-test
+```
