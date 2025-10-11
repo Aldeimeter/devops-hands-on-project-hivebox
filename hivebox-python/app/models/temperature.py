@@ -1,3 +1,4 @@
+"""Temperature response models for the HiveBox API."""
 from pydantic import BaseModel
 
 

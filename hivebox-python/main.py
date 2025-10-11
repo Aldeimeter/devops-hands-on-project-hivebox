@@ -1,3 +1,4 @@
+"""HiveBox API main application entry point."""
 from fastapi import FastAPI
 from app.routers import temperature, version
 

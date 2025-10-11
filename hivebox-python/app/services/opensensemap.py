@@ -1,3 +1,4 @@
+"""Service for interacting with the OpenSenseMap API."""
 from datetime import datetime, timedelta, timezone
 
 import httpx
@@ -68,12 +69,12 @@ class OpenSenseMapService:
                 return {"status": "excluded", "reason": "api_failure"}
 
             data = response.json()
-            return self._extract_temperature(data, box_id)
+            return self._extract_temperature(data)
 
-        except Exception:
+        except Exception:  # pylint: disable=broad-exception-caught
             return {"status": "excluded", "reason": "api_failure"}
 
-    def _extract_temperature(self, box_data: dict, box_id: str) -> dict:
+    def _extract_temperature(self, box_data: dict) -> dict:
         """Extract temperature from box data"""
         sensors = box_data.get("sensors", [])
 
@@ -122,5 +123,5 @@ class OpenSenseMapService:
             age = now - timestamp
 
             return age <= timedelta(hours=1)
-        except Exception:
+        except Exception:  # pylint: disable=broad-exception-caught
             return False

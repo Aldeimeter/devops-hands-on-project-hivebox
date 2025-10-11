@@ -1,3 +1,4 @@
+"""Temperature endpoint router."""
 from fastapi import APIRouter, HTTPException
 
 from app.config import settings

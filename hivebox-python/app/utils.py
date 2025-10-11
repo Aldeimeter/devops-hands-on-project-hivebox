@@ -1,3 +1,4 @@
+"""Utility functions for the HiveBox application."""
 from pathlib import Path
 
 
