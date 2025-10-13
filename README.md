@@ -93,6 +93,15 @@ However, Pylint is more comprehensive in its analysis. My approach:
 - [x] Install uv
 - [x] Init uv project
 
+#### Security Hardening
+
+- [x] Configure OSSF Scorecard workflow for supply-chain security
+- [x] Set up Dependabot for automated dependency updates (Python + Docker)
+- [x] Pin GitHub Actions to SHA hashes
+- [x] Pin Docker base images with SHA256 digests
+- [x] Configure least-privilege token permissions in CI workflows
+- [x] Document security posture and practices
+
 #### Preparation p.2
 
 ##### FastApi vs Flask
@@ -512,3 +521,54 @@ docker run -d --name hivebox-test -p 8000:80 hivebox:prod
 curl http://localhost:8000/version
 docker stop hivebox-test && docker rm hivebox-test
 ```
+
+#### Security and Dependency Management
+
+**OSSF Scorecard Integration:**
+
+Implemented OpenSSF Scorecard for supply-chain security monitoring in `.github/workflows/scorecard.yml`:
+
+- **Automated Security Analysis:** Runs weekly and on every push to `main` branch
+- **Supply-Chain Security Checks:** Evaluates 18+ security checks including:
+  - Branch protection configuration
+  - Dependency update tools
+  - Code review practices
+  - Dangerous workflow patterns
+  - Token permissions
+  - Pinned dependencies
+- **SARIF Integration:** Results uploaded to GitHub Security tab for visibility
+- **Public Badge:** Project security posture visible via OpenSSF badge
+
+**Dependabot Configuration:**
+
+Automated dependency updates configured in `.github/dependabot.yml`:
+
+- **Python Dependencies:** Weekly updates for `uv`-managed packages in `/hivebox-python`
+- **Docker Base Images:** Weekly updates for Docker base images
+- **Automatic PRs:** Creates pull requests for security patches and version updates
+- **Ecosystem Coverage:** Monitors both application dependencies and container images
+
+**Action and Image Pinning:**
+
+Enhanced CI/CD security by pinning all external dependencies to SHA hashes:
+
+- **GitHub Actions:** All actions pinned to specific SHA commits (e.g., `actions/checkout@08eba0b2...`)
+- **Docker Base Images:** Python and other base images include SHA256 digests
+- **Supply Chain Integrity:** Prevents unauthorized modifications to CI/CD dependencies
+- **Automated Updates:** Dependabot manages updates to pinned versions
+
+**Security Benefits:**
+
+- Automated vulnerability detection and patching
+- Supply-chain attack prevention through pinned dependencies
+- Continuous security posture monitoring
+- Proactive dependency maintenance
+- GitHub Security Dashboard integration
+
+**CI Token Permissions:**
+
+Implemented least-privilege token permissions in GitHub Actions:
+
+- **Default Read-Only:** `permissions: contents: read` in CI workflow
+- **Specific Grants:** Security events and ID tokens only where needed (Scorecard workflow)
+- **Reduced Attack Surface:** Minimizes potential damage from compromised workflows
