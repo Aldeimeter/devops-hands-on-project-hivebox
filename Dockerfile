@@ -1,5 +1,5 @@
 # Base stage - shared dependencies and setup
-FROM ghcr.io/astral-sh/uv:python3.13-alpine AS base
+FROM ghcr.io/astral-sh/uv:python3.13-alpine@sha256:e41e1e3bfa549df25a9786a0f5ee64b021500d61e3cda41f251c60ebde1e3a90 AS base
 
 WORKDIR /api
 
